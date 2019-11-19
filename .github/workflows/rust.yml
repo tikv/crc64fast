@@ -1,0 +1,30 @@
+name: Rust
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions-rs/toolchain@v1
+      name: Install Rust
+      with:
+        toolchain: stable
+        profile: minimal
+        components: clippy, rustfmt
+    - name: Clippy
+      run: cargo clippy
+    - name: Format
+      run: cargo fmt -- --check
+    - name: Test
+      run: cargo test
+    - name: Benchmark
+      run: cargo bench --bench benchmark -- --noplot --warm-up-time 1 --measurement-time 2 --sample-size 50
+
