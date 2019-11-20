@@ -7,7 +7,18 @@ edition = "2018"
 keywords = ["crc", "crc64", "simd", "checksum"]
 repository = "https://github.com/tikv/crc64fast"
 description = "SIMD accelerated CRC64 calculation"
+exclude = ["build_table.rs"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+
+[dev-dependencies]
+crc = "1"
+proptest = "0.9"
+criterion = "0.3"
+rand = "0.7"
+
+[[bench]]
+name = 'benchmark'
+harness = false
