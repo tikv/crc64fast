@@ -46,5 +46,5 @@ Features beyond AArch64 are unlikely to be implemented.
 
 crc64fast is dual-licensed under
 
-* Apache 2.0 license ([LICENSE-Apache] or <http://www.apache.org/licenses/LICENSE-2.0>)
-* MIT license ([LICENSE-MIT] or <https://opensource.org/licenses/MIT>)
+* Apache 2.0 license ([LICENSE-Apache](./LICENSE-Apache) or <http://www.apache.org/licenses/LICENSE-2.0>)
+* MIT license ([LICENSE-MIT](./LICENSE-MIT) or <https://opensource.org/licenses/MIT>)
