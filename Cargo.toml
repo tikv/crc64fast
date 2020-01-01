@@ -20,6 +20,9 @@ proptest = "0.9"
 criterion = "0.3"
 rand = "0.7"
 
+[features]
+fake-simd = []
+
 [[bench]]
 name = 'benchmark'
 harness = false

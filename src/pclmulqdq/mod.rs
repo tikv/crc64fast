@@ -7,7 +7,11 @@
 //!
 //! [white paper]: https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/fast-crc-computation-generic-polynomials-pclmulqdq-paper.pdf
 
+#[cfg(not(feature = "fake-simd"))]
 #[cfg_attr(any(target_arch = "x86", target_arch = "x86_64"), path = "x86.rs")]
+mod arch;
+
+#[cfg(feature = "fake-simd")]
 mod arch;
 
 use self::arch::Simd;
@@ -115,4 +119,60 @@ unsafe fn update_simd(state: u64, first: &[Simd; 8], rest: &[[Simd; 8]]) -> u64 
 
     // barrett reduction.
     r.barrett(table::POLY, table::MU)
+}
+
+#[test]
+fn test_size_and_alignment() {
+    assert_eq!(std::mem::size_of::<Simd>(), 16);
+    assert_eq!(std::mem::align_of::<Simd>(), 16);
+}
+
+#[test]
+fn test_new() {
+    unsafe {
+        let x = Simd::new(0xd7c8_11cf_e5c5_c792, 0x86e6_5c36_e68b_4804);
+        let y = Simd::new(0xd7c8_11cf_e5c5_c792, 0x86e6_5c36_e68b_4804);
+        let z = Simd::new(0xfa3e_0099_cd5e_d60d, 0xad71_9ee6_57d1_498e);
+        assert_eq!(x, y);
+        assert_ne!(x, z);
+    }
+}
+
+#[test]
+fn test_xor() {
+    unsafe {
+        let x = Simd::new(0xe450_87f9_b031_0d47, 0x3d72_e92a_96c7_4c63);
+        let y = Simd::new(0x7ed8_ae0a_dfbd_89c0, 0x1c9b_dfaa_953e_0ef4);
+        let mut z = x ^ y;
+        assert_eq!(z, Simd::new(0x9a88_29f3_6f8c_8487, 0x21e9_3680_03f9_4297));
+        z ^= Simd::new(0x57a2_0f44_c005_b2ea, 0x7056_bde9_9303_aa51);
+        assert_eq!(z, Simd::new(0xcd2a_26b7_af89_366d, 0x51bf_8b69_90fa_e8c6));
+    }
+}
+
+#[test]
+fn test_fold_16() {
+    unsafe {
+        let x = Simd::new(0xb5f1_2590_5645_0b6c, 0x333a_2c49_c361_9e21);
+        let f = x.fold_16(0x5ba9_365b_e2e9_5bf5, 0xbecc_9dd9_038f_c366);
+        assert_eq!(f, Simd::new(0x4f55_42df_ef35_1810, 0x0c03_5bd6_70fc_5abd));
+    }
+}
+
+#[test]
+fn test_fold_8() {
+    unsafe {
+        let x = Simd::new(0x60c0_b48f_4a92_2003, 0x203c_f7bc_ad34_103b);
+        let f = x.fold_8(0x3e90_3688_ea71_f472);
+        assert_eq!(f, Simd::new(0x07d7_2761_4d16_56db, 0x2bc0_ed8a_a341_7665));
+    }
+}
+
+#[test]
+fn test_barrett() {
+    unsafe {
+        let x = Simd::new(0x2606_e582_3406_9bae, 0x76cc_1105_0fef_6d68);
+        let b = x.barrett(0x435d_0f79_19a6_1445, 0x5817_6272_f8fa_b8d5);
+        assert_eq!(b, 0x5e4d_0253_942a_d95d);
+    }
 }
