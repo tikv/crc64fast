@@ -1,6 +1,10 @@
 crc64fast
 =========
 
+[![Build status](https://github.com/tikv/crc64fast/workflows/Rust/badge.svg)](https://github.com/tikv/crc64fast/actions?query=workflow%3ARust)
+[![Latest Version](https://img.shields.io/crates/v/crc64fast.svg)](https://crates.io/crates/crc64fast)
+[![Documentation](https://img.shields.io/badge/api-rustdoc-blue.svg)](https://docs.rs/crc64fast)
+
 SIMD-accelerated CRC-64-ECMA computation
 (similar to [`crc32fast`](https://crates.io/crates/crc32fast)).
 
