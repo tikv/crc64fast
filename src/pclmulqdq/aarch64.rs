@@ -12,7 +12,7 @@ pub struct Simd(uint8x16_t);
 
 impl Simd {
     #[inline]
-    #[target_feature(enable = "crypto", enable = "neon")]
+    #[target_feature(enable = "pmull", enable = "neon")]
     unsafe fn from_mul(a: poly64_t, b: poly64_t) -> Self {
         let mul = vmull_p64(a, b);
         Self(vreinterpretq_u8_p128(mul))
@@ -42,7 +42,7 @@ impl Simd {
 
 impl super::SimdExt for Simd {
     fn is_supported() -> bool {
-        is_aarch64_feature_detected!("crypto") && is_aarch64_feature_detected!("neon")
+        is_aarch64_feature_detected!("pmull") && is_aarch64_feature_detected!("neon")
     }
 
     #[inline]
@@ -52,10 +52,10 @@ impl super::SimdExt for Simd {
     }
 
     #[inline]
-    #[target_feature(enable = "crypto", enable = "neon")]
+    #[target_feature(enable = "pmull", enable = "neon")]
     unsafe fn fold_16(self, coeff: Self) -> Self {
-        let h;
-        let l;
+        let h: Self;
+        let l: Self;
 
         // FIXME: When used as a single function, this branch is equivalent to
         // the ASM below. However, when fold_16 is called inside a loop, for
@@ -84,7 +84,7 @@ impl super::SimdExt for Simd {
     }
 
     #[inline]
-    #[target_feature(enable = "crypto", enable = "neon")]
+    #[target_feature(enable = "pmull", enable = "neon")]
     unsafe fn fold_8(self, coeff: u64) -> Self {
         let [x0, x1] = self.into_poly64s();
         let h = Self::from_mul(poly64_t(coeff), x0);
@@ -93,7 +93,7 @@ impl super::SimdExt for Simd {
     }
 
     #[inline]
-    #[target_feature(enable = "crypto", enable = "neon")]
+    #[target_feature(enable = "pmull", enable = "neon")]
     unsafe fn barrett(self, poly: u64, mu: u64) -> u64 {
         let t1 = Self::from_mul(self.low_64(), poly64_t(mu)).low_64();
         let l = Self::from_mul(t1, poly64_t(poly));
@@ -132,7 +132,7 @@ extern "C" {
 }
 
 #[inline]
-#[target_feature(enable = "crypto")]
+#[target_feature(enable = "pmull")]
 unsafe fn vmull_p64(a: poly64_t, b: poly64_t) -> poly128_t {
     poly128_t(pmull64(a.0, b.0))
 }
