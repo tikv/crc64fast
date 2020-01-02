@@ -1,8 +1,8 @@
 [package]
 name = "crc64fast"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["The TiKV Project Developers"]
-license = "MIT/Apache-2.0"
+license = "MIT OR Apache-2.0"
 edition = "2018"
 keywords = ["crc", "crc64", "simd", "checksum"]
 repository = "https://github.com/tikv/crc64fast"
