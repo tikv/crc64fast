@@ -18,6 +18,18 @@
 //! assert_eq!(checksum, 0x8483_c0fa_3260_7d61);
 //! ```
 
+#![cfg_attr(
+    feature = "pmull",
+    feature(
+        stdsimd,
+        platform_intrinsics,
+        aarch64_target_feature,
+        simd_ffi,
+        link_llvm_intrinsics,
+        asm,
+    )
+)]
+
 mod pclmulqdq;
 mod table;
 
