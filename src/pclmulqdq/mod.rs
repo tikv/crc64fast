@@ -9,6 +9,7 @@
 
 #[cfg(not(feature = "fake-simd"))]
 #[cfg_attr(any(target_arch = "x86", target_arch = "x86_64"), path = "x86.rs")]
+#[cfg_attr(all(target_arch = "aarch64", feature = "pmull"), path = "aarch64.rs")]
 mod arch;
 
 #[cfg(feature = "fake-simd")]
@@ -32,9 +33,9 @@ trait SimdExt: Copy + Debug + BitXor {
 
     /// Performs a CRC folding step across 16 bytes.
     ///
-    /// Should return `(high ⊗ self.low_64) ⊕ (low ⊗ self.high_64)`,
+    /// Should return `(coeff.low_64 ⊗ self.low_64) ⊕ (coeff.high_64 ⊗ self.high_64)`,
     /// where ⊕ is XOR and ⊗ is carryless multiplication.
-    unsafe fn fold_16(self, high: u64, low: u64) -> Self;
+    unsafe fn fold_16(self, coeff: Self) -> Self;
 
     /// Performs a CRC folding step across 8 bytes.
     ///
@@ -91,6 +92,10 @@ fn update(mut state: u64, bytes: &[u8]) -> u64 {
     any(target_arch = "x86", target_arch = "x86_64"),
     target_feature(enable = "pclmulqdq", enable = "sse2", enable = "sse4.1")
 )]
+#[cfg_attr(
+    all(target_arch = "aarch64", feature = "pmull"),
+    target_feature(enable = "crypto", enable = "neon")
+)]
 unsafe fn update_simd(state: u64, first: &[Simd; 8], rest: &[[Simd; 8]]) -> u64 {
     // receive the initial 128 bytes of data
     let mut x = *first;
@@ -99,26 +104,27 @@ unsafe fn update_simd(state: u64, first: &[Simd; 8], rest: &[[Simd; 8]]) -> u64 
     x[0] ^= Simd::new(0, state);
 
     // perform 128-byte folding.
+    let coeff = Simd::new(table::K_1023, table::K_1087);
     for chunk in rest {
         for (xi, yi) in x.iter_mut().zip(chunk.iter()) {
-            *xi = *yi ^ xi.fold_16(table::K_1087, table::K_1023);
+            *xi = *yi ^ xi.fold_16(coeff);
         }
     }
 
-    let x = x[0].fold_16(table::K_959, table::K_895) // fold by distance of 112 bytes
-        ^ x[1].fold_16(table::K_831, table::K_767) // fold by distance of 96 bytes
-        ^ x[2].fold_16(table::K_703, table::K_639) // fold by distance of 80 bytes
-        ^ x[3].fold_16(table::K_575, table::K_511) // fold by distance of 64 bytes
-        ^ x[4].fold_16(table::K_447, table::K_383) // fold by distance of 48 bytes
-        ^ x[5].fold_16(table::K_319, table::K_255) // fold by distance of 32 bytes
-        ^ x[6].fold_16(table::K_191, table::K_127) // fold by distance of 16 bytes
-        ^ x[7];
-
-    // finally fold 16 bytes into 8 bytes.
-    let r = x.fold_8(table::K_127);
-
-    // barrett reduction.
-    r.barrett(table::POLY, table::MU)
+    let coeffs = [
+        Simd::new(table::K_895, table::K_959), // fold by distance of 112 bytes
+        Simd::new(table::K_767, table::K_831), // fold by distance of 96 bytes
+        Simd::new(table::K_639, table::K_703), // fold by distance of 80 bytes
+        Simd::new(table::K_511, table::K_575), // fold by distance of 64 bytes
+        Simd::new(table::K_383, table::K_447), // fold by distance of 48 bytes
+        Simd::new(table::K_255, table::K_319), // fold by distance of 32 bytes
+        Simd::new(table::K_127, table::K_191), // fold by distance of 16 bytes
+    ];
+    x.iter()
+        .zip(&coeffs)
+        .fold(x[7], |acc, (m, c)| acc ^ m.fold_16(*c))
+        .fold_8(table::K_127) // finally fold 16 bytes into 8 bytes.
+        .barrett(table::POLY, table::MU) // barrett reduction.
 }
 
 #[test]
@@ -154,7 +160,7 @@ fn test_xor() {
 fn test_fold_16() {
     unsafe {
         let x = Simd::new(0xb5f1_2590_5645_0b6c, 0x333a_2c49_c361_9e21);
-        let f = x.fold_16(0x5ba9_365b_e2e9_5bf5, 0xbecc_9dd9_038f_c366);
+        let f = x.fold_16(Simd::new(0xbecc_9dd9_038f_c366, 0x5ba9_365b_e2e9_5bf5));
         assert_eq!(f, Simd::new(0x4f55_42df_ef35_1810, 0x0c03_5bd6_70fc_5abd));
     }
 }

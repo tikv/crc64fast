@@ -27,10 +27,9 @@ impl super::SimdExt for Simd {
 
     #[inline]
     #[target_feature(enable = "sse2", enable = "pclmulqdq")]
-    unsafe fn fold_16(self, high: u64, low: u64) -> Self {
-        let coeff = Self::new(high, low);
-        let h = Self(_mm_clmulepi64_si128(self.0, coeff.0, 0x10));
-        let l = Self(_mm_clmulepi64_si128(self.0, coeff.0, 0x01));
+    unsafe fn fold_16(self, coeff: Self) -> Self {
+        let h = Self(_mm_clmulepi64_si128(self.0, coeff.0, 0x11));
+        let l = Self(_mm_clmulepi64_si128(self.0, coeff.0, 0x00));
         h ^ l
     }
 

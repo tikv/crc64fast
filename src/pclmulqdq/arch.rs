@@ -22,9 +22,9 @@ impl super::SimdExt for Simd {
         Simd(u128::from(low) | u128::from(high) << 64)
     }
 
-    unsafe fn fold_16(self, high: u64, low: u64) -> Self {
-        let h = poly_mul(high, self.0 as u64);
-        let l = poly_mul(low, (self.0 >> 64) as u64);
+    unsafe fn fold_16(self, coeff: Self) -> Self {
+        let h = poly_mul(coeff.0 as u64, self.0 as u64);
+        let l = poly_mul((coeff.0 >> 64) as u64, (self.0 >> 64) as u64);
         Self(h ^ l)
     }
 
