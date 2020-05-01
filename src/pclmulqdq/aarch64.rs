@@ -12,7 +12,7 @@ pub struct Simd(uint8x16_t);
 
 impl Simd {
     #[inline]
-    #[target_feature(enable = "pmull", enable = "neon")]
+    #[target_feature(enable = "neon")]
     unsafe fn from_mul(a: poly64_t, b: poly64_t) -> Self {
         let mul = vmull_p64(a, b);
         Self(vreinterpretq_u8_p128(mul))
@@ -52,7 +52,7 @@ impl super::SimdExt for Simd {
     }
 
     #[inline]
-    #[target_feature(enable = "pmull", enable = "neon")]
+    #[target_feature(enable = "crypto", enable = "neon")]
     unsafe fn fold_16(self, coeff: Self) -> Self {
         let h: Self;
         let l: Self;
@@ -72,7 +72,7 @@ impl super::SimdExt for Simd {
         }
         #[cfg(not(slow))]
         {
-            asm!(
+            llvm_asm!(
                 "pmull $0.1q, $2.1d, $3.1d
                 pmull2 $1.1q, $2.2d, $3.2d"
                 : "=&w"(l), "=w"(h)
@@ -84,20 +84,22 @@ impl super::SimdExt for Simd {
     }
 
     #[inline]
-    #[target_feature(enable = "pmull", enable = "neon")]
+    #[target_feature(enable = "neon")]
     unsafe fn fold_8(self, coeff: u64) -> Self {
         let [x0, x1] = self.into_poly64s();
-        let h = Self::from_mul(poly64_t(coeff), x0);
-        let l = Self::new(0, x1.0);
+        let h = Self::from_mul(transmute(coeff), x0);
+        let l = Self::new(0, transmute(x1));
         h ^ l
     }
 
     #[inline]
-    #[target_feature(enable = "pmull", enable = "neon")]
+    #[target_feature(enable = "neon")]
     unsafe fn barrett(self, poly: u64, mu: u64) -> u64 {
-        let t1 = Self::from_mul(self.low_64(), poly64_t(mu)).low_64();
-        let l = Self::from_mul(t1, poly64_t(poly));
-        (self ^ l).high_64().0 ^ t1.0
+        let t1 = Self::from_mul(self.low_64(), transmute(mu)).low_64();
+        let l = Self::from_mul(t1, transmute(poly));
+        let reduced: u64 = transmute((self ^ l).high_64());
+        let t1: u64 = transmute(t1);
+        reduced ^ t1
     }
 }
 
@@ -113,53 +115,27 @@ impl BitXor for Simd {
 //
 // Below are intrinsics not yet included in Rust.
 
-#[allow(non_camel_case_types)]
-#[derive(Copy, Clone)]
-struct poly64_t(u64);
-
-#[allow(non_camel_case_types)]
-struct poly128_t(uint8x16_t);
-
 extern "platform-intrinsic" {
     fn simd_extract<T, U>(x: T, idx: u32) -> U;
-    fn simd_xor<T>(x: T, y: T) -> T;
-}
-
-#[allow(improper_ctypes)]
-extern "C" {
-    #[link_name = "llvm.aarch64.neon.pmull64"]
-    fn pmull64(a: u64, b: u64) -> uint8x16_t;
-}
-
-#[inline]
-#[target_feature(enable = "pmull")]
-unsafe fn vmull_p64(a: poly64_t, b: poly64_t) -> poly128_t {
-    poly128_t(pmull64(a.0, b.0))
 }
 
 #[inline]
 #[target_feature(enable = "neon")]
 unsafe fn vgetq_lane_p64(a: poly64x2_t, idx: u32) -> poly64_t {
     let elem: i64 = simd_extract(a, idx);
-    poly64_t(elem as u64)
+    transmute(elem)
 }
 
 #[inline]
 #[target_feature(enable = "neon")]
 unsafe fn vreinterpretq_u8_p128(a: poly128_t) -> uint8x16_t {
-    a.0
+    transmute(a)
 }
 
 #[inline]
 #[target_feature(enable = "neon")]
 unsafe fn vreinterpretq_p64_u8(a: uint8x16_t) -> poly64x2_t {
     transmute(a)
-}
-
-#[inline]
-#[target_feature(enable = "neon")]
-unsafe fn veorq_u8(a: uint8x16_t, b: uint8x16_t) -> uint8x16_t {
-    simd_xor(a, b)
 }
 
 #[inline]

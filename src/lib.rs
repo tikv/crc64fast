@@ -24,9 +24,7 @@
         stdsimd,
         platform_intrinsics,
         aarch64_target_feature,
-        simd_ffi,
-        link_llvm_intrinsics,
-        asm,
+        llvm_asm,
     )
 )]
 
