@@ -18,7 +18,18 @@
 //! assert_eq!(checksum, 0x8483_c0fa_3260_7d61);
 //! ```
 
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#![cfg_attr(
+    feature = "pmull",
+    feature(
+        stdsimd,
+        platform_intrinsics,
+        aarch64_target_feature,
+        simd_ffi,
+        link_llvm_intrinsics,
+        asm,
+    )
+)]
+
 mod pclmulqdq;
 mod table;
 
@@ -38,10 +49,7 @@ impl Digest {
     /// algorithm to choose.
     pub fn new() -> Self {
         Self {
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             computer: pclmulqdq::get_update(),
-            #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
-            computer: table::update,
             state: !0,
         }
     }
