@@ -20,12 +20,7 @@
 
 #![cfg_attr(
     feature = "pmull",
-    feature(
-        stdsimd,
-        platform_intrinsics,
-        aarch64_target_feature,
-        llvm_asm,
-    )
+    feature(stdsimd, platform_intrinsics, aarch64_target_feature, llvm_asm)
 )]
 
 mod pclmulqdq;
