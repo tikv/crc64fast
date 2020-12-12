@@ -1,12 +1,13 @@
-
-
-
-#Added by cargo
+# Added by cargo
 #
-#already existing elements are commented out
-
+# already existing elements are commented out
 /target
 **/*.rs.bk
 Cargo.lock
 *.exe
 *.pdb
+
+# ignore fuzz elements
+/fuzz/target
+/fuzz/out
+/fuzz/in

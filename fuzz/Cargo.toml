@@ -1,0 +1,8 @@
+[package]
+name = "fuzz"
+version = "0.1.0"
+authors = ["The TiKV Project Developers", "Chojan Shang <psiace@outlook.com>"]
+
+[dependencies]
+afl = "0.8.0"
+crc64fast = { path = ".." }
