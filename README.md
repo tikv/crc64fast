@@ -54,7 +54,7 @@ Features beyond AArch64 are unlikely to be implemented.
 
 * [x] AArch64 support based on PMULL
 * [ ] `no_std` support
-* [ ] Fuzz test
+* [x] Fuzz test
 * [ ] Custom polynomial
 
 ## License

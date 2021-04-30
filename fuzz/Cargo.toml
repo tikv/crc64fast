@@ -2,6 +2,7 @@
 name = "fuzz"
 version = "0.1.0"
 authors = ["The TiKV Project Developers", "Chojan Shang <psiace@outlook.com>"]
+publish = false
 
 [dependencies]
 afl = "0.8.0"

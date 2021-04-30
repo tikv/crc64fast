@@ -16,9 +16,9 @@ readme = "README.md"
 
 [dev-dependencies]
 crc = "1"
-proptest = "0.10"
+proptest = "1"
 criterion = "0.3"
-rand = "0.7"
+rand = "0.8"
 
 [features]
 pmull = []

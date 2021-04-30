@@ -27,4 +27,3 @@ jobs:
       run: cargo test
     - name: Benchmark
       run: cargo bench --bench benchmark -- --noplot --warm-up-time 1 --measurement-time 2 --sample-size 50
-
