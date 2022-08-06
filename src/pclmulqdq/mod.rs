@@ -9,7 +9,7 @@
 
 #[cfg(not(feature = "fake-simd"))]
 #[cfg_attr(any(target_arch = "x86", target_arch = "x86_64"), path = "x86.rs")]
-#[cfg_attr(all(target_arch = "aarch64", feature = "pmull"), path = "aarch64.rs")]
+#[cfg_attr(all(target_arch = "aarch64"), path = "aarch64.rs")]
 mod arch;
 
 #[cfg(feature = "fake-simd")]
@@ -92,10 +92,7 @@ fn update(mut state: u64, bytes: &[u8]) -> u64 {
     any(target_arch = "x86", target_arch = "x86_64"),
     target_feature(enable = "pclmulqdq", enable = "sse2", enable = "sse4.1")
 )]
-#[cfg_attr(
-    all(target_arch = "aarch64", feature = "pmull"),
-    target_feature(enable = "crypto", enable = "neon")
-)]
+#[cfg_attr(all(target_arch = "aarch64"), target_feature(enable = "neon,aes"))]
 unsafe fn update_simd(state: u64, first: &[Simd; 8], rest: &[[Simd; 8]]) -> u64 {
     // receive the initial 128 bytes of data
     let mut x = *first;

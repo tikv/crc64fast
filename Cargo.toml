@@ -9,6 +9,7 @@ repository = "https://github.com/tikv/crc64fast"
 description = "SIMD accelerated CRC64 calculation"
 exclude = ["build_table.rs"]
 readme = "README.md"
+rust-version = "1.61"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -21,7 +22,6 @@ criterion = "0.3"
 rand = "0.8"
 
 [features]
-pmull = []
 fake-simd = []
 
 [[bench]]
