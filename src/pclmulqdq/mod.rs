@@ -7,20 +7,22 @@
 //!
 //! [white paper]: https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/fast-crc-computation-generic-polynomials-pclmulqdq-paper.pdf
 
+use std::{
+    fmt::Debug,
+    ops::{BitXor, BitXorAssign},
+};
+
+use super::table;
+
+use self::arch::Simd;
+
 #[cfg(not(feature = "fake-simd"))]
-#[cfg_attr(any(target_arch = "x86", target_arch = "x86_64"), path = "x86.rs")]
+#[cfg_attr(any(target_arch = "x86", target_arch = "x86_64"), path = "x86/mod.rs")]
 #[cfg_attr(all(target_arch = "aarch64", feature = "pmull"), path = "aarch64.rs")]
 mod arch;
 
 #[cfg(feature = "fake-simd")]
 mod arch;
-
-use self::arch::Simd;
-use super::table;
-use std::{
-    fmt::Debug,
-    ops::{BitXor, BitXorAssign},
-};
 
 /// This trait must be implemented on `self::arch::Simd` to provide the
 /// platform-specific SIMD implementations.
@@ -70,21 +72,44 @@ impl BitXorAssign for Simd {
 }
 
 pub fn get_update() -> super::UpdateFn {
+    #[cfg(all(feature = "vpclmulqdq"))]
+    {
+        use arch::vpclmulqdq::*;
+        if Simd256::is_supported() {
+            return update_256_batch;
+        }
+    }
+
     if Simd::is_supported() {
-        update
+        update_128_batch
     } else {
         table::update
     }
 }
 
-fn update(mut state: u64, bytes: &[u8]) -> u64 {
-    let (left, middle, right) = unsafe { bytes.align_to::<[Simd; 8]>() };
+// This function is unsafe because it uses platform dependent functions.
+unsafe fn update_128_batch(mut state: u64, bytes: &[u8]) -> u64 {
+    let (left, middle, right) = bytes.align_to::<[Simd; 8]>();
     if let Some((first, rest)) = middle.split_first() {
         state = table::update(state, left);
-        state = unsafe { update_simd(state, first, rest) };
+        state = update_simd(state, first, rest);
         table::update(state, right)
     } else {
         table::update(state, bytes)
+    }
+}
+
+#[cfg(feature = "vpclmulqdq")]
+#[target_feature(enable = "avx2", enable = "avx512vpclmulqdq")]
+unsafe fn update_256_batch(mut state: u64, bytes: &[u8]) -> u64 {
+    use arch::vpclmulqdq::*;
+    let (left, middle, right) = bytes.align_to::<[[Simd256; 4]; 2]>();
+    if let Some((first, rest)) = middle.split_first() {
+        state = update_128_batch(state, left);
+        state = update_vpclmulqdq(state, first, rest);
+        update_128_batch(state, right)
+    } else {
+        update_128_batch(state, bytes)
     }
 }
 
@@ -111,6 +136,11 @@ unsafe fn update_simd(state: u64, first: &[Simd; 8], rest: &[[Simd; 8]]) -> u64 
         }
     }
 
+    fold_tail(x)
+}
+
+#[inline(always)]
+unsafe fn fold_tail(x: [Simd; 8]) -> u64 {
     let coeffs = [
         Simd::new(table::K_895, table::K_959), // fold by distance of 112 bytes
         Simd::new(table::K_767, table::K_831), // fold by distance of 96 bytes

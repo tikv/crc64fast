@@ -22,11 +22,20 @@
     feature = "pmull",
     feature(stdsimd, platform_intrinsics, aarch64_target_feature, llvm_asm)
 )]
+#![cfg_attr(
+    feature = "vpclmulqdq",
+    feature(
+        simd_ffi,
+        link_llvm_intrinsics,
+        avx512_target_feature,
+        target_feature_11
+    )
+)]
 
 mod pclmulqdq;
 mod table;
 
-type UpdateFn = fn(u64, &[u8]) -> u64;
+type UpdateFn = unsafe fn(u64, &[u8]) -> u64;
 
 /// Represents an in-progress CRC-64 computation.
 #[derive(Clone)]
@@ -57,7 +66,9 @@ impl Digest {
 
     /// Writes some data into the digest.
     pub fn write(&mut self, bytes: &[u8]) {
-        self.state = (self.computer)(self.state, bytes);
+        unsafe {
+            self.state = (self.computer)(self.state, bytes);
+        }
     }
 
     /// Computes the current CRC-64-ECMA value.
