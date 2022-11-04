@@ -8,6 +8,9 @@ use std::arch::x86::*;
 use std::arch::x86_64::*;
 use std::ops::BitXor;
 
+#[cfg(all(feature = "vpclmulqdq"))]
+pub mod vpclmulqdq;
+
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug)]
 pub struct Simd(__m128i);
@@ -28,8 +31,8 @@ impl super::SimdExt for Simd {
     #[inline]
     #[target_feature(enable = "sse2", enable = "pclmulqdq")]
     unsafe fn fold_16(self, coeff: Self) -> Self {
-        let h = Self(_mm_clmulepi64_si128(self.0, coeff.0, 0x11));
-        let l = Self(_mm_clmulepi64_si128(self.0, coeff.0, 0x00));
+        let h = Self(_mm_clmulepi64_si128::<0x11>(self.0, coeff.0));
+        let l = Self(_mm_clmulepi64_si128::<0x00>(self.0, coeff.0));
         h ^ l
     }
 
@@ -37,8 +40,8 @@ impl super::SimdExt for Simd {
     #[target_feature(enable = "sse2", enable = "pclmulqdq")]
     unsafe fn fold_8(self, coeff: u64) -> Self {
         let coeff = Self::new(0, coeff);
-        let h = Self(_mm_clmulepi64_si128(self.0, coeff.0, 0x00));
-        let l = Self(_mm_srli_si128(self.0, 8));
+        let h = Self(_mm_clmulepi64_si128::<0x00>(self.0, coeff.0));
+        let l = Self(_mm_srli_si128::<8>(self.0));
         h ^ l
     }
 
@@ -46,11 +49,11 @@ impl super::SimdExt for Simd {
     #[target_feature(enable = "sse2", enable = "sse4.1", enable = "pclmulqdq")]
     unsafe fn barrett(self, poly: u64, mu: u64) -> u64 {
         let polymu = Self::new(poly, mu);
-        let t1 = _mm_clmulepi64_si128(self.0, polymu.0, 0x00);
-        let h = Self(_mm_slli_si128(t1, 8));
-        let l = Self(_mm_clmulepi64_si128(t1, polymu.0, 0x10));
+        let t1 = _mm_clmulepi64_si128::<0x00>(self.0, polymu.0);
+        let h = Self(_mm_slli_si128::<8>(t1));
+        let l = Self(_mm_clmulepi64_si128::<0x10>(t1, polymu.0));
         let reduced = h ^ l ^ self;
-        _mm_extract_epi64(reduced.0, 1) as u64
+        _mm_extract_epi64::<1>(reduced.0) as u64
     }
 }
 
