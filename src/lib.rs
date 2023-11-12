@@ -23,6 +23,8 @@
     feature(stdsimd, platform_intrinsics, aarch64_target_feature, llvm_asm)
 )]
 
+use std::hash::Hasher;
+
 mod pclmulqdq;
 mod table;
 
@@ -69,6 +71,16 @@ impl Digest {
 impl Default for Digest {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Hasher for Digest {
+    fn finish(&self) -> u64 {
+        self.sum64()
+    }
+
+    fn write(&mut self, bytes: &[u8]) {
+        self.write(bytes)
     }
 }
 
