@@ -38,15 +38,6 @@ be chosen based on CPU feature at runtime.
 
 [crc 1.8.1]: https://crates.io/crates/crc
 
-> **Note:** Since Rust has not stabilized SIMD support on AArch64, you need a
-> nightly compiler and enable the `pmull` feature to use the SIMD-based
-> implementation:
->
-> ```toml
-> [dependencies]
-> crc64fast = { version = "1.0", features = ["pmull"] }
-> ```
-
 ## TODO
 
 This crate is mainly intended for use in TiKV only.
