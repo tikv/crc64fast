@@ -1,8 +1,10 @@
 // Copyright 2019 TiKV Project Authors. Licensed under MIT or Apache-2.0.
 
-use crc::crc64::{self, Hasher64};
+use crc::{Crc, CRC_64_XZ};
 use criterion::*;
 use rand::{thread_rng, RngCore};
+
+const CRC: Crc<u64> = Crc::<u64>::new(&CRC_64_XZ);
 
 fn bench_crc(c: &mut Criterion) {
     let mut group = c.benchmark_group("CRC64");
@@ -15,11 +17,11 @@ fn bench_crc(c: &mut Criterion) {
         group.throughput(Throughput::Bytes(3 << size));
         group.bench_with_input(BenchmarkId::new("crc::crc64", size), &buf, |b, buf| {
             b.iter(|| {
-                let mut digest = crc64::Digest::new(crc64::ECMA);
-                digest.write(&buf[..(1 << size)]);
-                digest.write(&buf[(1 << size)..(2 << size)]);
-                digest.write(&buf[(2 << size)..]);
-                digest.sum64()
+                let mut digest = CRC.digest();
+                digest.update(&buf[..(1 << size)]);
+                digest.update(&buf[(1 << size)..(2 << size)]);
+                digest.update(&buf[(2 << size)..]);
+                digest.finalize()
             })
         });
         group.bench_with_input(BenchmarkId::new("crc64fast::simd", size), &buf, |b, buf| {

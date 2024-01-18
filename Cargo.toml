@@ -1,27 +1,29 @@
 [package]
 name = "crc64fast"
-version = "1.0.0"
+version = "1.1.0"
 authors = ["The TiKV Project Developers"]
 license = "MIT OR Apache-2.0"
-edition = "2018"
+edition = "2021"
 keywords = ["crc", "crc64", "simd", "checksum"]
 repository = "https://github.com/tikv/crc64fast"
 description = "SIMD accelerated CRC64 calculation"
 exclude = ["build_table.rs"]
 readme = "README.md"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+# Note: Rust 1.70 upgraded LLVM version to 16 (in particular https://reviews.llvm.org/D131047)
+# Before that, the compiler is unwilling to generate the PMULL2 instruction on AArch64.
+rust-version = "1.70.0"
 
 [dependencies]
 
 [dev-dependencies]
-crc = "1"
+crc = "3"
 proptest = "1"
-criterion = "0.3"
+criterion = "0.5"
 rand = "0.8"
 
 [features]
-pmull = []
+pmull = [] # deprecated, no longer have any effect.
 fake-simd = []
 
 [[bench]]

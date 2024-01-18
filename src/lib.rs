@@ -18,11 +18,6 @@
 //! assert_eq!(checksum, 0x8483_c0fa_3260_7d61);
 //! ```
 
-#![cfg_attr(
-    feature = "pmull",
-    feature(stdsimd, platform_intrinsics, aarch64_target_feature, llvm_asm)
-)]
-
 mod pclmulqdq;
 mod table;
 
@@ -75,9 +70,11 @@ impl Default for Digest {
 #[cfg(test)]
 mod tests {
     use super::Digest;
-    use crc::crc64::checksum_ecma;
+    use crc::{Crc, CRC_64_XZ};
     use proptest::collection::size_range;
     use proptest::prelude::*;
+
+    const CRC: Crc<u64> = Crc::<u64>::new(&CRC_64_XZ);
 
     #[test]
     fn test_standard_vectors() {
@@ -120,7 +117,7 @@ mod tests {
         fn equivalent_to_crc(bytes in any_buffer()) {
             let mut hasher = Digest::new();
             hasher.write(&bytes);
-            prop_assert_eq!(hasher.sum64(), checksum_ecma(&bytes));
+            prop_assert_eq!(hasher.sum64(), CRC.checksum(&bytes));
         }
 
         #[test]

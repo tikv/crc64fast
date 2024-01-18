@@ -5,7 +5,7 @@ crc64fast
 [![Latest Version](https://img.shields.io/crates/v/crc64fast.svg)](https://crates.io/crates/crc64fast)
 [![Documentation](https://img.shields.io/badge/api-rustdoc-blue.svg)](https://docs.rs/crc64fast)
 
-SIMD-accelerated CRC-64-ECMA computation
+SIMD-accelerated CRC-64/XZ (a.k.a. CRC-64/GO-ECMA) computation
 (similar to [`crc32fast`](https://crates.io/crates/crc32fast)).
 
 ## Usage
@@ -32,20 +32,11 @@ be chosen based on CPU feature at runtime.
 
 | Algorithm         | Throughput (x86_64) | Throughput (aarch64) |
 |:------------------|--------------------:|---------------------:|
-| [crc 1.8.1]       |  0.5 GiB/s          |  0.3 GiB/s           |
+| [crc 3.0.1]       |  0.5 GiB/s          |  0.3 GiB/s           |
 | crc64fast (table) |  2.3 GiB/s          |  1.8 GiB/s           |
 | crc64fast (simd)  | 28.2 GiB/s          | 20.0 GiB/s           |
 
-[crc 1.8.1]: https://crates.io/crates/crc
-
-> **Note:** Since Rust has not stabilized SIMD support on AArch64, you need a
-> nightly compiler and enable the `pmull` feature to use the SIMD-based
-> implementation:
->
-> ```toml
-> [dependencies]
-> crc64fast = { version = "1.0", features = ["pmull"] }
-> ```
+[crc 3.0.1]: https://docs.rs/crc/3.0.1/crc/index.html
 
 ## TODO
 
