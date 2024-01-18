@@ -17,13 +17,13 @@ rust-version = "1.70.0"
 [dependencies]
 
 [dev-dependencies]
-crc = "1"
+crc = "3"
 proptest = "1"
-criterion = "0.3"
+criterion = "0.5"
 rand = "0.8"
 
 [features]
-pmull = []
+pmull = [] # deprecated, no longer have any effect.
 fake-simd = []
 
 [[bench]]
